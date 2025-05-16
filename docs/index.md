@@ -1,5 +1,3 @@
-# DeepSeek R1单机版部署文档
-
 ## DeepSeek-R1简介
 
 DeepSeek-R1是深度求索（DeepSeek）于2025年1月20日发布的开源人工智能大型语言模型。在数学、代码及推理任务上的表现与 OpenAI-o1
