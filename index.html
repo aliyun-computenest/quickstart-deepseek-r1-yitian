@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="description" content="计算巢是阿里云开放给企业应用服务商的服务管理平台。服务商能够在计算巢上发布私有化部署服务，为其客户提供云上软件一键部署的能力；同时也支持全托管模式的服务，赋能服务商托管其客户资源。">
+  <title>Home - Aliyun 计算巢 x Demo</title>
+
+  <link rel="shortcut icon" href="img/favicon.ico">
+
+  <link rel="stylesheet" href="https://unpkg.com/purecss@1.0.0/build/pure-min.css">
+  <link rel="stylesheet" href="css/theme.css">
+  
+
+  
+
+  
+  
+
+  
+    <script src="search/main.js"></script>
+  
+
+  
+
+  <script src="js/highlight.min.js"></script>
+  <script>hljs.highlightAll();</script>
+</head>
+
+<body>
+  <div class="container">
+    <div class="nav">
+      <div class="nav-inner">
+        <div class="logo">
+          <img src="./img/logo-2x.png">
+        </div>
+        <div class="nav-list">
+          <ul>
+          
+              <li><a href="#deepseek-r1">DeepSeek-R1简介</a></li>
+              
+          
+              <li><a href="#_1">计费说明</a></li>
+              
+          
+              <li><a href="#ram">RAM账号所需权限</a></li>
+              
+          
+              <li><a href="#_2">部署流程</a></li>
+              
+                  <li><a href="#_3">性能测试</a></li>
+                  
+              
+          
+          </ul>
+        </div>
+      </div>
+    </div>
+    <div class="content theme-github">
+      
+      <div class="content-inner">        
+        
+        <h2 id="deepseek-r1">DeepSeek-R1简介</h2>
+<p>DeepSeek-R1是深度求索（DeepSeek）于2025年1月20日发布的开源人工智能大型语言模型。在数学、代码及推理任务上的表现与 OpenAI-o1
+旗鼓相当。</p>
+<h2 id="_1">计费说明</h2>
+<p>DeepSeek社区版在阿里云上的费用主要涉及：</p>
+<ul>
+<li>所选CPU云服务器的规格</li>
+<li>磁盘容量</li>
+<li>公网带宽
+  计费方式：按量付费（小时）或包年包月
+  预估费用在创建实例时可实时看到。</li>
+</ul>
+<h2 id="ram">RAM账号所需权限</h2>
+<table>
+<thead>
+<tr>
+<th>权限策略名称</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>AliyunECSFullAccess</td>
+<td>管理云服务器服务（ECS）的权限</td>
+</tr>
+<tr>
+<td>AliyunVPCFullAccess</td>
+<td>管理专有网络（VPC）的权限</td>
+</tr>
+<tr>
+<td>AliyunROSFullAccess</td>
+<td>管理资源编排服务（ROS）的权限</td>
+</tr>
+<tr>
+<td>AliyunComputeNestUserFullAccess</td>
+<td>管理计算巢服务（ComputeNest）的用户侧权限</td>
+</tr>
+</tbody>
+</table>
+<h2 id="_2">部署流程</h2>
+<ol>
+<li>
+<p>单击<a href="https://computenest.console.aliyun.com/service/instance/create/cn-hangzhou?type=user&amp;ServiceName=DeepSeek满血版CPU-倚天">部署链接</a>
+，进入服务实例部署界面。根据界面提示选择模型并填写参数，可以看到对应询价明细，确认参数后点击<strong>下一步：确认订单</strong>。</p>
+<p><img alt="deploy.png" src="1.jpg" /></p>
+</li>
+<li>
+<p>确认订单完成后同意服务协议并点击<strong>立即创建</strong>，等待部署完成后进入服务实例详情页。在资源栏中远程连接ECS。
+   <img alt="result.png" src="2.jpg" /></p>
+</li>
+<li>
+<p>执行启动命令服务。
+    <img alt="result.png" src="3.jpg" /></p>
+<p><code>shell
+/root/llama-wrap.sh llama.cpp/build/bin/llama-server -m /root/deepseek/DeepSeek-R1-Q8_0/DeepSeek-R1.Q8_0-00001-of-00015.gguf -c 4096 -b 2048 -ub 512 -t 64 --cache-type-k q8_0 --cache-type-v q8_0  -fa --host 0.0.0.0 --port 8080 -np 4</code>
+<strong>重点参数解释（其余参数可以通过--help参数来获取介绍）</strong>：</p>
+<pre><code>./llama-wrap.sh: 通过此脚本运行可以获得NUMA内存相关的性能优化
+
+-t 64: 指定线程数为64，这个是算子计算的时候llama.cpp会启动的多线程，目前需要指定的数目为一个NUMA Node的core数目性能最佳。
+
+-m: 指定模型文件，Q8_0满血版共有20个gguf文件，这里只需要指定第一个文件即可，其余模型文件llama-server会自动load
+
+--cache-type-k q8_0 --cache-type-v q8_0  -fa: 启用Flash Attention以及KV的量化功能会提高性能
+
+--host 0.0.0.0 --port 8080: 指定绑定的主机和端口，请确保系统的端口是开放的。如果需要绑定80端口，需要通过root用户运行llama-server
+
+-np 4: 指定slot数目，这个可以设置可以并发访问server的会话数目，当设置为4的时候，可以同时允许4个对话同时进行，第5个对话会被挂起，直到前面4个其中的任意一个对话结束，注意这个并非整个连接结束，而是一个问答对话结束。
+</code></pre>
+</li>
+<li>
+<p>等待命令执行完成后通过概览页提供的公网地址访问服务。
+    <img alt="result.png" src="4.png" /></p>
+</li>
+</ol>
+<h3 id="_3">性能测试</h3>
+<p>Llama.cpp自带了一个性能测试工具llama-batched-bench，可以通过以下方式运行性能测试：</p>
+<pre><code class="language-shell">/root/llama-wrap.sh llama.cpp/build/bin/llama-server -m /root/deepseek/DeepSeek-R1-Q8_0/DeepSeek-R1.Q8_0-00001-of-00015.gguf -c 4096 -b 2048 -ub 512 -npp 128 -ntg 128 -npl 1,2,4,8,16 -t 64  --cache-type-k q8_0 --cache-type-v q8_0  -fa
+</code></pre>
+<p>参考的性能数据：</p>
+<p><img alt="result.png" src="img.png" /></p>
+        
+      </div>
+
+      <div class="copyrights">© 2009-2022 Aliyun.com 版权所有</div>
+    </div>
+  </div>
+  
+  <!--
+  MkDocs version      : 1.6.1
+  Docs Build Date UTC : 2025-05-16 08:15:38.365593+00:00
+  -->
+</body>
+</html>
